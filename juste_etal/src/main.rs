@@ -1,34 +1,92 @@
+// #![feature(test)]
+
+// extern crate test;
+
 use std::{
     ops::{SubAssign, AddAssign},
-    iter::repeat_n,
+    // iter::repeat_n,
 };
 
-fn main() {
-    // let (n, val, boxes) = parse_input();
+// use test::Bencher;
 
-    let boxes = repeat_n(0, 10000).collect::<Vec<_>>();
-    let n = boxes.len();
-    let val = 1_000_000_000;
+fn main() {
+    first_try();
+}
+
+fn first_try() {
+    let (n, val, boxes) = parse_input();
+
+    // let boxes = repeat_n(1, 1000000).collect::<Vec<_>>();
+    // let n = boxes.len();
+    // let val = 100;
 
     let mut res = ModInt::new(0, 1_000_000_007);
 
-    for i in 0usize..(n) {
-        let mut module = ModInt::new(0, val);
-        for j in i..n {
-            module += boxes[j];
+    let mut test_0 = true;
+    let mut test_1 = true;
+    for i in &boxes {
+        if *i != 0 {
+            test_0 = false;
+        } 
+        if *i != 1 {
+            test_1 = false;
+        }
+    }
+    if test_0 {
+        for i in 0..=n {
+            res += i as i32;
+        }
+    } else if test_1 {
+        // println!("{}", n as i32 / val);
+        for fact in 1..=(n as i32 / val) {
+            res += n as i32 - (fact * val) + 1;
+            // for _ in 0..=(n as i32 - (fact * val)) {
+            //     res += 1;
+            // }
+        }
+    } else {
+        for i in 0usize..(n) {
+            let mut module = ModInt::new(0, val);
+            for j in i..n {
+                module += boxes[j];
+                if module.get_val() == 0 {
+                    res += 1;
+                }
+            }
+        }
+    }
+
+    // println!("{:?}", res);
+
+    println!("{}", res.get_val());
+}
+
+fn alternative() {
+    let (n, val, boxes) = parse_input();
+
+    // let boxes = repeat_n(0, 10000).collect::<Vec<_>>();
+    // let n = boxes.len();
+    // let val = 1_000_000_000;
+
+    let mut res = ModInt::new(0, 1_000_000_007);
+
+    let mut first = ModInt::new(0, val);
+    for size in 1usize..=n {
+        first += boxes[size-1];
+
+        let mut module = first;
+        if module.get_val() == 0 {
+            res += 1;
+        }
+        for i in size..n {
+            module += boxes[i];
             if module.get_val() == 0 {
                 res += 1;
             }
         }
-        if i % 1000 == 0 {
-            println!("{:?}, {:?} / {:?}", i, module, res);
-        }
-        // println!("{:?} / {}", module, i);
     }
-    println!("{:?}", res);
 
     println!("{}", res.get_val());
-    // println!("{}", (0usize..=n).sum::<usize>() % 1_000_000_007);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,3 +145,10 @@ fn parse_input() -> (usize, i32, Vec<i32>) {
 
     (n, val, boxes)
 }
+
+// #[bench]
+// fn bench_algo(b: &mut Bencher) {
+//     b.iter(|| {
+//         test::black_box(main());
+//     });
+// }
