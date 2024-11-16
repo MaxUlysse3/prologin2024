@@ -41,8 +41,7 @@ fn alg2(n: i32, a: Vec<String>, b: Vec<String>) {
     let mut count = HashMap::<String, usize>::new();
     for sa in &a {
         for sb in &b {
-            let word = format!("{}{}", sa, sb).to_string();
-            match count.get_mut(&word) {
+            let word = format!("{}{}", sa, sb).to_string(); match count.get_mut(&word) {
                 Some(r) => *r += 1,
                 None => { count.insert(word, 1).unwrap(); },
             }
