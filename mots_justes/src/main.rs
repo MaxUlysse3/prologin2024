@@ -1,12 +1,12 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
 };
 
 fn main() {
     let (n, a, b) = parse_input();
-    alg2(n, a, b);
+    // alg2(n, a, b);
     // alg1ex(n, a, b);
-    // println!("{}", alg1ex(n, a, b));
+    println!("{}", alg2(n, a, b));
 }
 
 fn alg1ex(n: i32, a: Vec<String>, b: Vec<String>) -> usize {
@@ -37,30 +37,53 @@ fn alg1ex(n: i32, a: Vec<String>, b: Vec<String>) -> usize {
 
 }
 
-fn alg2(n: i32, a: Vec<String>, b: Vec<String>) {
+fn alg2(n: i32, a: Vec<String>, b: Vec<String>) -> usize {
+    // println!("\n\n\n ALG2");
     let mut count = HashMap::<String, usize>::new();
     for sa in &a {
         for sb in &b {
-            let word = format!("{}{}", sa, sb).to_string(); match count.get_mut(&word) {
+            let word = format!("{}{}", sa, sb).to_string();
+            match count.get_mut(&word) {
                 Some(r) => *r += 1,
-                None => { count.insert(word, 1).unwrap(); },
+                None => { count.insert(word, 1); },
             }
         }
     }
 
-    let mut count_zones = HashMap::<usize, usize>::new();
-    for (_, v) in count.iter() {
-        match count_zones.get_mut(v) {
-            Some(r) => *r += 1,
-            None => { count_zones.insert(*v, 1).unwrap(); },
+    let mut num_of_zones = HashMap::<usize, usize>::new();
+    for c in count.values() {
+        *num_of_zones.entry(*c).or_insert(0) += 1;
+    }
+    // let mut counted = count.iter().map(|(_, v)| *v).collect::<Vec<_>>();
+    let mut counted = count.values().map(|v| *v).collect::<HashSet<_>>().into_iter().collect::<Vec<_>>();
+    counted.sort();
+    // println!("{counted:?}");
+
+    let mut targs = vec![];
+    let mid = counted.len() / 2;
+
+    targs.push(counted[mid]);
+    let size_target = 20;
+    for i in 1..=size_target {
+        if mid + i < counted.len() {
+            targs.push(counted[mid + i]);
+        }
+        if mid >= i {
+            targs.push(counted[mid - i]);
         }
     }
 
-    let mut sum_zones = vec![];
-    for i in 0..count_zones.len() {
-        
+    let mut res = vec![];
+    // println!("targs: {targs:?}");
+
+    for target in targs {
+        let r = find_corrections(&count, target as i32).values().sum::<usize>();
+        res.push(r);
     }
-    
+    // println!("res : {res:?}");
+    let res = *res.iter().min().unwrap();
+    // println!("res algbest : {res}");
+    res
 }
 
 fn test(count: HashMap<String, usize>) -> usize {
@@ -80,7 +103,7 @@ fn find_corrections(count: &HashMap<String, usize>, target: i32) -> HashMap<Stri
         }
     });
 
-    println!("target = {} : {}", target, corecs.values().sum::<usize>());
+    // println!("target = {} : {}", target, corecs.values().sum::<usize>());
 
     corecs
 }
@@ -115,18 +138,21 @@ mod test {
 
     #[test]
     fn test_alg() {
-        const N: usize = 3;
+        const N: usize = 12;
+        const K: usize = 100;
 
         let letters = (0..N).map(|x| x.to_string()).collect::<Vec<_>>();
-        let l1 = vec![];
-        let l2 = vec![];
+        for c in 0..K {
+            println!("---------   num test : {c}, N = {N}");
+            let mut l1 = vec![];
+            let mut l2 = vec![];
 
-        for _ in 0..N {
-            l1.push(letters[rand::thread_rng().gen_range(0..N)]);
-            l2.push(letters[rand::thread_rng().gen_range(0..N)]);
+            for _ in 0..N {
+                l1.push(letters[rand::thread_rng().gen_range(0..N)].clone());
+                l2.push(letters[rand::thread_rng().gen_range(0..N)].clone());
+            }
+
+            assert_eq!(alg1ex(N as i32, l1.clone(), l2.clone()), alg2(N as i32, l1, l2));
         }
-
-        assert_eq!(alg1ex(N, l1, l2), alg2(N, l1, l2));
-
     }
 }
