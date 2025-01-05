@@ -3,7 +3,6 @@ use std::{
     collections::{HashMap},
 };
 
-
 /// une route bidirectionnelle reliant deux maisons
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct Route {
@@ -34,10 +33,8 @@ impl ModInt {
 
 impl AddAssign<i64> for ModInt {
     fn add_assign(&mut self, mut rhs: i64) {
-        while self.modulo - rhs <= self.val {
-            rhs -= self.modulo;
-        }
         self.val += rhs;
+        self.val = self.val % self.modulo;
     }
 }
 
@@ -75,6 +72,8 @@ fn score_total(n: i32, m: i32, k: i32, scores: Vec<i32>, mut routes: Vec<Route>)
     let mut lens = std::iter::repeat(None).take(n as usize).collect::<Vec<Option<i32>>>();
     // println!("{connections:?}");
     explore(0, &routes, &mut lens, &connections, 0, k, 0);
+    // println!("Explored");
+    
     // For each element e of lens, if the house at index i is reachable, lens[i] will be Some(l)
     // where l is the length of the path. If the house is unreachable, lens[i] = None
     // println!("{lens:?}");
@@ -82,6 +81,7 @@ fn score_total(n: i32, m: i32, k: i32, scores: Vec<i32>, mut routes: Vec<Route>)
     // Contains (i, l) where i is a house index and l then length of the path from house 1 for all
     // reachable houses
     let houses = lens.into_iter().enumerate().filter_map(|(i, l)| Some((i, l?))).collect::<Vec<_>>();
+    // println!("houses created");
     // println!("{houses:?}");
 
     let mut sums = std::iter::repeat(ModInt::new(0, 1_000_000_007)).take(k as usize + 1).collect::<Vec<_>>();
@@ -91,17 +91,27 @@ fn score_total(n: i32, m: i32, k: i32, scores: Vec<i32>, mut routes: Vec<Route>)
         let s = sums[i - 1].get_val() as i64;
         sums[i] += s;
     }
+    // println!("Sums computed");
     // println!("{sums:?}");
 
     let mut res = ModInt::new(0, 1_000_000_007);
 
+    // println!("{}", houses.len());
     houses.iter().for_each(|(i, l)| res += scores[*i as usize] as i64 * sums[k as usize - *l as usize].get_val() as i64);
+    // println!("res comuted");
     res.get_val()
 }
 
+// len is the length of the explored path
+// routes is the list of all routes
+// lens is the list containing the lens of the paths to house 1
+// connections is the list of all houses connected to each house
+// h is the number of the explored house
+// k_max is the maximum length of a path
+// last_h is the house the function comes from
 fn explore(len: i32, routes: &Vec<Route>, lens: &mut Vec<Option<i32>>, connections: &Vec<Vec<i32>>,
     h: i32, k_max: i32, last_h: i32) {
-    // println!("Exploring {h}");
+    // println!("Exploring {h} from house {last_h}");
     let connected = &connections[h as usize];
     let r = &mut lens[h as usize];
     if r == &None {
@@ -114,15 +124,16 @@ fn explore(len: i32, routes: &Vec<Route>, lens: &mut Vec<Option<i32>>, connectio
     if len == k_max {
         return;
     }
+    let mut counter = 0;
     for id in connected {
-        // if *id != last_h {
-        //     explore(len + 1, routes, lens, connections, *id, k_max, h);
-        // }
         match lens[*id as usize].as_mut() {
-            Some(other_len) => if *other_len <= len + 1 { continue; },
+            Some(other_len) => {
+                if *other_len <= len + 1 { continue; };
+            },
             None => (),
         }
         explore(len + 1, routes, lens, connections, *id, k_max, h);
+        counter += 1;
     }
 }
 
@@ -154,19 +165,16 @@ fn main() {
 
     println!("{}", score_total(n, m, k, scores, routes));
     
-    // let n = 5i32;
-    // let m = 5i32;
-    // let k = 6i32;
+    // let n = 200_000i32;
+    // let m = 199_999i32;
+    // let k = 200000i32;
     // let scores = (1..=n).collect::<Vec<i32>>();
     // let mut routes = Vec::<Route>::with_capacity(m as usize);
-    // for i in 1..=4 {
+    // for i in 1..=m {
     //     routes.push(Route { a: i, b: i + 1} );
     // }
-    // routes.push(Route {a: 1, b: 5});
     // let out = score_total(n, m, k, scores, routes);
     // println!("{}", out);
-    // let res = 750591879;
-    // println!("{res}");
 }
 
 fn read_line(buffer: &mut String) -> &str {
